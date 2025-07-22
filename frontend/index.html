@@ -416,3 +416,343 @@
     
   </body>
 </html>
+
+<!-- Chatbot Button & Window (design amélioré) -->
+<style>
+#chatbot-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: linear-gradient(135deg, #28a745 70%, #43e97b 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 62px;
+  height: 62px;
+  font-size: 34px;
+  box-shadow: 0 6px 24px rgba(40,167,69,0.22), 0 2px 8px rgba(0,0,0,0.10);
+  cursor: pointer;
+  z-index: 1000;
+  transition: box-shadow 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#chatbot-btn:hover {
+  box-shadow: 0 12px 36px rgba(40,167,69,0.32), 0 4px 16px rgba(0,0,0,0.14);
+  transform: scale(1.07);
+}
+#chatbot-window {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  bottom: 110px;
+  right: 32px;
+  width: 360px;
+  max-width: 95vw;
+  max-height: 540px;
+  background: rgba(255,255,255,0.97);
+  border-radius: 22px;
+  box-shadow: 0 12px 48px rgba(40,167,69,0.18), 0 4px 16px rgba(0,0,0,0.13);
+  z-index: 1001;
+  overflow: hidden;
+  border: 2.5px solid #28a745;
+  animation: chatbot-pop 0.25s cubic-bezier(.4,1.4,.6,1) 1;
+  backdrop-filter: blur(2px);
+}
+@keyframes chatbot-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+#chatbot-header {
+  background: linear-gradient(90deg, #28a745 80%, #43e97b 100%);
+  color: #fff;
+  padding: 14px 0 12px 0;
+  font-weight: 600;
+  text-align: left;
+  font-size: 18px;
+  letter-spacing: 1px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(40,167,69,0.10);
+}
+#chatbot-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 14px;
+  box-shadow: 0 1px 4px rgba(40,167,69,0.10);
+  font-size: 22px;
+}
+#chatbot-title {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+}
+#chatbot-close {
+  position: absolute;
+  right: 14px;
+  top: 13px;
+  background: #fff;
+  border: none;
+  color: #28a745;
+  font-size: 22px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(40,167,69,0.10);
+  opacity: 0.85;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+#chatbot-close:hover {
+  background: #28a745;
+  color: #fff;
+  opacity: 1;
+}
+#chatbot-messages {
+  padding: 16px 14px 10px 14px;
+  height: 320px;
+  overflow-y: auto;
+  background: transparent;
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+#chatbot-input-area {
+  display: flex;
+  border-top: 1.5px solid #e9ecef;
+  background: #f8f9fa;
+  padding: 10px 10px 10px 14px;
+  box-shadow: 0 -2px 8px rgba(40,167,69,0.04);
+}
+#chatbot-input {
+  flex: 1;
+  border: none;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: #fff;
+  outline: none;
+  border-radius: 18px;
+  box-shadow: 0 1px 4px rgba(40,167,69,0.07);
+  margin-right: 10px;
+  transition: box-shadow 0.2s;
+}
+#chatbot-input:focus {
+  box-shadow: 0 2px 8px rgba(40,167,69,0.13);
+}
+#chatbot-send {
+  background: linear-gradient(135deg, #28a745 70%, #43e97b 100%);
+  color: #fff;
+  border: none;
+  padding: 0 22px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 18px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.13s;
+  box-shadow: 0 1px 4px rgba(40,167,69,0.10);
+  font-weight: 600;
+}
+#chatbot-send:hover {
+  background: linear-gradient(135deg, #43e97b 70%, #28a745 100%);
+  box-shadow: 0 2px 8px rgba(40,167,69,0.18);
+  transform: scale(1.07);
+}
+.chatbot-msg {
+  margin: 10px 0;
+  display: flex;
+  align-items: flex-end;
+  animation: chatbot-msg-pop 0.32s cubic-bezier(.4,1.4,.6,1);
+}
+@keyframes chatbot-msg-pop {
+  0% { transform: scale(0.85) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.chatbot-msg.bot {
+  justify-content: flex-start;
+}
+.chatbot-msg.user {
+  justify-content: flex-end;
+}
+.chatbot-bubble {
+  max-width: 80%;
+  padding: 12px 18px 10px 18px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 1px 6px rgba(40,167,69,0.09);
+  position: relative;
+  transition: background 0.2s;
+  background: linear-gradient(120deg, #e9fbe8 80%, #d2f6d7 100%);
+}
+.chatbot-msg.bot .chatbot-bubble {
+  color: #218838;
+  border-bottom-left-radius: 6px;
+  border-top-right-radius: 16px;
+}
+.chatbot-msg.user .chatbot-bubble {
+  background: linear-gradient(120deg, #28a745 80%, #43e97b 100%);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 16px;
+}
+.chatbot-time {
+  font-size: 11px;
+  color: #b1b1b1;
+  margin: 0 6px;
+  align-self: flex-end;
+}
+#chatbot-typing {
+  display: none;
+  margin: 0 0 8px 0;
+  color: #218838;
+  font-size: 14px;
+  font-style: italic;
+  align-items: center;
+  gap: 6px;
+}
+#chatbot-typing span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 1px;
+  background: #28a745;
+  border-radius: 50%;
+  animation: blink 1.2s infinite both;
+}
+#chatbot-typing span:nth-child(2) { animation-delay: 0.2s; }
+#chatbot-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+@media (max-width: 600px) {
+  #chatbot-window {
+    right: 2vw;
+    width: 98vw;
+    min-width: 0;
+    max-width: 99vw;
+    bottom: 0;
+    border-radius: 16px 16px 0 0;
+  }
+  #chatbot-btn {
+    right: 2vw;
+    bottom: 2vw;
+  }
+}
+</style>
+
+<button id="chatbot-btn" title="Chatbot">💬</button>
+<div id="chatbot-window">
+  <div id="chatbot-header">
+    <div id="chatbot-avatar">🤖</div>
+    <div id="chatbot-title">SalonBot</div>
+    <button id="chatbot-close" title="Fermer">&times;</button>
+  </div>
+  <div id="chatbot-messages"></div>
+  <div id="chatbot-typing"><span></span><span></span><span></span> Le bot écrit...</div>
+  <div id="chatbot-input-area">
+    <input id="chatbot-input" type="text" placeholder="Écris ton message..." autocomplete="off" aria-label="Message au chatbot" />
+    <button id="chatbot-send" aria-label="Envoyer">Envoyer</button>
+  </div>
+</div>
+<script>
+const chatbotBtn = document.getElementById('chatbot-btn');
+const chatbotWindow = document.getElementById('chatbot-window');
+const chatbotMessages = document.getElementById('chatbot-messages');
+const chatbotInput = document.getElementById('chatbot-input');
+const chatbotSend = document.getElementById('chatbot-send');
+const chatbotClose = document.getElementById('chatbot-close');
+const chatbotTyping = document.getElementById('chatbot-typing');
+
+function getTime() {
+  const d = new Date();
+  return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function addMessage(text, from='bot') {
+  const msg = document.createElement('div');
+  msg.className = 'chatbot-msg ' + from;
+  const bubble = document.createElement('div');
+  bubble.className = 'chatbot-bubble';
+  bubble.innerText = text;
+  const time = document.createElement('span');
+  time.className = 'chatbot-time';
+  time.innerText = getTime();
+  bubble.appendChild(time);
+  msg.appendChild(bubble);
+  chatbotMessages.appendChild(msg);
+  chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+}
+
+function showTyping(show=true) {
+  chatbotTyping.style.display = show ? 'flex' : 'none';
+  if (show) chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+}
+
+function botReply(userText) {
+  showTyping(true);
+  setTimeout(() => {
+    showTyping(false);
+    let reply = "Je suis le chatbot du salon. Pose-moi une question !";
+    const txt = userText.toLowerCase();
+    if (/bonjour|salut|hello/.test(txt)) reply = "Bonjour ! 👋 Comment puis-je vous aider aujourd'hui ?";
+    else if (/horaire|ouverture/.test(txt)) reply = "Le salon est ouvert de 9h à 18h du lundi au samedi. Besoin d'un rendez-vous ?";
+    else if (/prix|tarif|combien/.test(txt)) reply = "Nos tarifs varient selon la prestation : coupe, couleur, brushing... Voulez-vous le détail d'un service ?";
+    else if (/rdv|rendez-vous|réserver/.test(txt)) reply = "Vous pouvez réserver un rendez-vous via la page réservation du site ou me demander comment faire.";
+    else if (/merci|thanks/.test(txt)) reply = "Avec plaisir ! 😊";
+    else if (/contact|adresse|téléphone|numero|numéro/.test(txt)) reply = "Vous pouvez nous contacter via la page contact ou au 01 23 45 67 89.";
+    else if (/services?/.test(txt)) reply = "Nous proposons : coupe, coloration, brushing, soins, coiffure événementielle...";
+    else if (/aide|help/.test(txt)) reply = "Je peux répondre sur les horaires, tarifs, réservations, services, contact... Essayez une question !";
+    else if (/annuler|supprimer/.test(txt)) reply = "Pour annuler un rendez-vous, allez dans votre espace client ou contactez-nous.";
+    else if (/où|ou est|localisation|adresse/.test(txt)) reply = "Le salon est situé au 123 rue de la Beauté, Paris.";
+    addMessage(reply, 'bot');
+  }, 900 + Math.random()*600);
+}
+
+function welcomeMessage() {
+  setTimeout(() => {
+    addMessage("👋 Bonjour et bienvenue sur notre site ! Je suis SalonBot, posez-moi vos questions sur le salon, les rendez-vous, les tarifs...");
+  }, 400);
+}
+
+chatbotBtn.onclick = () => {
+  if (chatbotWindow.style.display === 'none' || chatbotWindow.style.display === '') {
+    chatbotWindow.style.display = 'flex';
+    chatbotMessages.innerHTML = '';
+    welcomeMessage();
+  } else {
+    chatbotWindow.style.display = 'none';
+  }
+  chatbotInput.focus();
+};
+chatbotClose.onclick = () => {
+  chatbotWindow.style.display = 'none';
+  chatbotBtn.focus();
+};
+
+chatbotSend.onclick = () => {
+  const text = chatbotInput.value.trim();
+  if (!text) return;
+  addMessage(text, 'user');
+  chatbotInput.value = '';
+  botReply(text);
+};
+
+chatbotInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') chatbotSend.onclick();
+});
+
+// Accessibilité : focus sur input à l'ouverture
+chatbotWindow.addEventListener('transitionend', () => chatbotInput.focus());
+</script>

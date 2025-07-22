@@ -599,29 +599,109 @@ jQuery(document).ready(function($) {
 	  }
 	}
 
-	function renderUserReservations(reservations, container) {
+	// Ajout : fonction pour récupérer l'utilisateur courant à jour
+	async function fetchCurrentUser() {
+	  const res = await fetch(`${USER_SERVICE}/auth/me`, {
+	    headers: authHeaders()
+	  });
+	  if (!res.ok) return null;
+	  return res.json();
+	}
+
+	// Nouvelle version asynchrone de renderUserReservations
+	async function renderUserReservations(reservations, container) {
 	  container.innerHTML = '';
 	  if (!reservations.length) {
 	    container.innerHTML = '<p>No appointments yet.</p>';
 	    return;
 	  }
 	  const table = document.createElement('table');
-	  table.className = 'table table-striped';
+	  table.className = 'table table-bordered';
 	  table.innerHTML = `<tr><th>Date</th><th>Time</th><th>Service</th><th>Status</th><th>Action</th></tr>`;
+	  // Récupérer le rôle utilisateur à jour via /auth/me
+	  let userRole = null;
+	  const currentUser = await fetchCurrentUser();
+	  if (currentUser && currentUser.role) {
+	    userRole = currentUser.role.toUpperCase();
+	  }
 	  reservations.forEach(r => {
 	    const tr = document.createElement('tr');
 	    const date = new Date(r.date).toLocaleDateString();
 	    const status = r.is_cancelled ? '<span class="badge badge-danger">Cancelled</span>' : '<span class="badge badge-success">Active</span>';
+	    let actionBtns = '';
+	    if (!r.is_cancelled) {
+	      if (userRole === 'ADMIN' || userRole === 'CLIENT') {
+	        actionBtns += `<button class="btn btn-sm btn-warning mr-1" data-edit="${r.id}">Edit</button>`;
+	      }
+	      actionBtns += `<button class="btn btn-sm btn-danger" data-cancel="${r.id}">Cancel</button>`;
+	    }
 	    tr.innerHTML = `<td>${date}</td><td>${r.heure}</td><td>${r.service}</td><td>${status}</td>
-	      <td>
-	        ${!r.is_cancelled ? `
-	          <button class="btn btn-sm btn-warning mr-1" data-edit="${r.id}">Edit</button>
-	          <button class="btn btn-sm btn-danger" data-cancel="${r.id}">Cancel</button>
-	        ` : ''}
-	      </td>`;
+	      <td>${actionBtns}</td>`;
 	    table.appendChild(tr);
 	  });
 	  container.appendChild(table);
+	}
+
+	// Nouvelle version asynchrone de loadUserReservations
+	async function loadUserReservations() {
+	  const container = document.getElementById('userReservations');
+	  if (!container) return;
+	  const reservations = await fetchUserReservations();
+	  await renderUserReservations(reservations, container);
+	  container.onclick = async e => {
+	    if (e.target.dataset.cancel) {
+	      if (confirm('Are you sure you want to cancel this appointment?')) {
+	        try {
+	          await cancelRendezVous(e.target.dataset.cancel);
+	          alert('Appointment cancelled successfully!');
+	          loadUserReservations();
+	        } catch (err) {
+	          alert('Error cancelling appointment: ' + err.message);
+	        }
+	      }
+	    }
+	    if (e.target.dataset.edit) {
+	      const id = e.target.dataset.edit;
+	      // Trouver la ligne à éditer
+	      const tr = e.target.closest('tr');
+	      // Récupérer les valeurs actuelles
+	      const tds = tr.querySelectorAll('td');
+	      const oldDate = tds[0].innerText;
+	      const oldHeure = tds[1].innerText;
+	      const oldService = tds[2].innerText;
+	      // Formulaire inline
+	      tr.innerHTML = `
+	        <td><input type="date" class="form-control form-control-sm" value="${formatDateForInput(oldDate)}"></td>
+	        <td><input type="time" class="form-control form-control-sm" value="${oldHeure}"></td>
+	        <td><input type="text" class="form-control form-control-sm" value="${oldService}"></td>
+	        <td>${tds[3].innerHTML}</td>
+	        <td>
+	          <button class="btn btn-sm btn-success mr-1" data-validate-edit>Valider</button>
+	          <button class="btn btn-sm btn-secondary" data-cancel-edit>Annuler</button>
+	        </td>
+	      `;
+	      // Gestion des boutons
+	      tr.querySelector('[data-cancel-edit]').onclick = () => {
+	        loadUserReservations();
+	      };
+	      tr.querySelector('[data-validate-edit]').onclick = async () => {
+	        const date = tr.querySelector('input[type="date"]').value;
+	        const heure = tr.querySelector('input[type="time"]').value;
+	        const service = tr.querySelector('input[type="text"]').value;
+	        if (!date || !heure || !service) {
+	          alert('Merci de remplir tous les champs');
+	          return;
+	        }
+	        try {
+	          await editRendezVous(id, { date, heure, service });
+	          alert('Appointment updated successfully!');
+	          loadUserReservations();
+	        } catch (err) {
+	          alert('Error updating appointment: ' + err.message);
+	        }
+	      };
+	    }
+	  };
 	}
 
 	async function editRendezVous(id, { date, heure, service }) {
@@ -643,39 +723,15 @@ jQuery(document).ready(function($) {
 	  return res.json();
 	}
 
-	function loadUserReservations() {
-	  const container = document.getElementById('userReservations');
-	  if (!container) return;
-	  fetchUserReservations().then(reservations => {
-	    renderUserReservations(reservations, container);
-	    container.onclick = async e => {
-	      if (e.target.dataset.cancel) {
-	        if (confirm('Are you sure you want to cancel this appointment?')) {
-	          try {
-	            await cancelRendezVous(e.target.dataset.cancel);
-	            alert('Appointment cancelled successfully!');
-	            loadUserReservations();
-	          } catch (err) {
-	            alert('Error cancelling appointment: ' + err.message);
-	          }
-	        }
-	      }
-	      if (e.target.dataset.edit) {
-	        const id = e.target.dataset.edit;
-	        const date = prompt('New date (YYYY-MM-DD):');
-	        const heure = prompt('New time (HH:MM):');
-	        const service = prompt('New service:');
-	        if (!date || !heure || !service) return;
-	        try {
-	          await editRendezVous(id, { date, heure, service });
-	          alert('Appointment updated successfully!');
-	          loadUserReservations();
-	        } catch (err) {
-	          alert('Error updating appointment: ' + err.message);
-	        }
-	      }
-	    };
-	  });
+	function formatDateForInput(dateStr) {
+	  // dateStr est au format local (ex: 25/07/2025), on convertit en yyyy-mm-dd
+	  const parts = dateStr.split('/');
+	  if (parts.length === 3) {
+	    // format fr
+	    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+	  }
+	  // fallback
+	  return dateStr;
 	}
 
 	// --- ADMIN FUNCTIONALITY ---
