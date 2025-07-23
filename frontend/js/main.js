@@ -295,7 +295,7 @@ jQuery(document).ready(function($) {
 	const RESERVATION_SERVICE = 'http://localhost:3002';
 
 	// --- AUTH LOGIC ---
-	async function registerUser(name, email, password, role = 'user') {
+	async function registerUser(name, email, password, role = 'client') {
 	  const res = await fetch(`${USER_SERVICE}/auth/register`, {
 	    method: 'POST',
 	    headers: { 'Content-Type': 'application/json' },
@@ -780,7 +780,7 @@ jQuery(document).ready(function($) {
 	    const token = getToken();
 	    const user = decodeJWT(token);
 
-	    if (!token || !user || user.role !== 'admin') {
+	    if (!token || !user || !user.role || user.role.toUpperCase() !== 'ADMIN') {
 	      messageDiv.textContent = 'Admin access required';
 	      messageDiv.classList.add('alert-danger');
 	      messageDiv.style.display = 'block';
@@ -952,7 +952,7 @@ function updateAuthUI() {
   document.querySelectorAll('.guest-only').forEach(el => el.style.display = token ? 'none' : 'block');
   
   // Handle admin sections
-  const isAdmin = user && user.role === 'admin';
+  const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = isAdmin ? 'block' : 'none';
   });
